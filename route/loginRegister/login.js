@@ -18,5 +18,9 @@ router.get('/',async (ctx,next)=>{
   ctx.response.body=svgData
 })
 
+router.post('/',async (ctx,next)=>{
+   // 用户名、密码、验证码都正确的话，才生成token
+   
+})
 
 module.exports=router.routes()
