@@ -92,3 +92,45 @@
               结果今天安装完mongoose模块后，我直接在mongod所在模块目录下先输入cmd，然后再输入以下命令：
                 mongod --dbpath xxxxx  --port=27016
               然后数据库就连接上了（可能是肌肉记忆吧）。。。
+
+###      八、注册模块的实现
+              先说一下我遇到的坑吧（这个坑踩了2个多小时，也是服了。。。）。我这里想要做一个统一的返回的格式，如下：
+                ```
+                  var responseData
+
+                  // 数据统一返回（这么写虽然有很多人会不屑，但是对于一个学生项目来说即简单又粗暴）
+                  router.use((ctx,next)=>{
+                     responseData={
+                       code:0,
+                       message:''
+                     }
+                     next()
+                  })
+
+                  // 当时的测试用例 (篇幅有限，逻辑就不全写了，想看全部逻辑请到route文件夹下寻找)
+                  router.post('/',(ctx,next)=>{
+                     const {username,password} = ctx.request.body
+                     responseData.code=0
+                     responseData.message='注册成功'
+                     ctx.response.body=responseData  
+                     return 
+                  })
+
+                  // 当时的测试结果（当时我觉得成功了）：
+                     {
+                            code:0,
+                            message:'注册成功'
+                     }
+
+                  // 今天把有关数据库的注释都放开（具体代码请看app.js和route文件夹），postman测试结果为404。。。
+                ```
+              有了404咱就得排查啊，结果这排查可让我走了不少弯路，排查过程不说了，最后问题出在统一返回的中间件上。中间件的写法有3中格式：（这块会整理出一个专栏）
+                 1、common function
+                      原因分析：
+                              我们当时测试用例的写法就是common写法，这种情况下，我们的next()返回的其实是promise，也就是说你得使用promise.then()的形式进入下一个中间件，而我们下一个异步中间件是通过async来进入的，所以说2种写法不一样，导致了进程一直处于pending，造成了404
+                      问题解决：
+                              在所有的中间价前面加上async，并且在异步操作前面加上await
+                 
+                 2、async  function（KOA2推荐使用）
+
+                 3、generator function              
