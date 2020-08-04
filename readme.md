@@ -50,6 +50,28 @@
                  ctx.response.type='html'
                  ctx.response.body=`<a href="javascript: window.location.reload();">${cap.data}</a>`
              ```
+             具体代码：
+                 
+                 // 处理一下图形验证码的路由
+                 router.get('/code',async (ctx,next)=>{
+                    const cap=svgCaptcha.create({
+                    size:4,         // 验证码的长度
+                    width:160,
+                    height:50,
+                    fontSize:50,
+                    ignoreChars:'0oOliLI',   // 验证码的字符排除0oOliLI
+                    noise:2,                 // 干扰线条数量
+                    color:true,
+                    background:'#eee'
+                })
+                let text=cap.text.toLowerCase()  // 忽略大小写
+
+                //ctx.set('Content-Type','image/svg+xml')
+
+                ctx.response.type='html'
+                ctx.response.body=`<a href="javascript: window.location.reload();">${cap.data}</a>`
+                console.log(cap.text)       // 图形验证码的结果
+                })
             功能: 访问localhost:3005/code 会随机生成一个验证码，并且每点击一次都会生成新的验证码
             缺点：1、如果这样做的话就没前端什么事了，浏览器直接渲染了。。。
                  2、 重新生成验证码的代价太大，因为上述做法实际上是重新渲染了页面。。。
@@ -70,9 +92,8 @@
                       这个不想说了。。
                     ```
 
-
-###    六、KOA+Nuxtjs实现验证码登录(恭喜，终于成功了)
-            今天终于把验证码登录这一块的核心整完了，剩下的就是注册了。注册很好整，其实注册和登录如果用cookie+session来实现的话真的非常简单（不是吹牛逼，这么实现的话，半个小时就可以把这两个功能写完），但是如果这样的话，那跟不思进取也没什么区别了，岂不是浪费了时间。。。
+###    六、KOA+Nuxtjs实现验证码功能(恭喜，终于成功了)
+            今天终于把验证码这一块的核心整完了，剩下的就是注册了。注册很好整，其实注册和登录如果用cookie+session来实现的话真的非常简单（不是吹牛逼，这么实现的话，半个小时就可以把这两个功能写完），但是如果这样的话，那跟不思进取也没什么区别了，岂不是浪费了时间。。。
              6.1、 进入正题:
                     先说说我最开始的实现过程: 起初后端这块，我返回的是一个json对象，这个对象里包含验证码的结果、验证码自身，这样如果验证码的自身能够被渲染的话，那我就可以在前端对登录进行验证，解放了一部分后端。但是我发现在asyncData生命周期中发送Ajax确实能够在渲染组件之前获取验证码的结果，但是不能够显示验证码自身。
              6.2、 出错原因：
@@ -134,3 +155,36 @@
                  2、async  function（KOA2推荐使用）
 
                  3、generator function              
+
+###   九、实现Token登录（前端登录方式我会整理成一个专栏）
+           9.1、什么是Token登录？
+                 Token是服务端生成的一串字符串，用来作为客户端请求的一个令牌。每次登录，服务端都会生成一个token
+                 字符串返回给前端。客户端访问权限路由的时候，都要带上这个token进行身份验证。
+           
+           9.2、Token字符串的组成（具体详细信息请到GitHub上搜索jsonwebtoken）
+                 header.payload.signature
+              9.2.1、header(头信息)
+              9.2.2、payload(负载)
+              9.2.3、signature(签名)
+
+           9.3、Token实现流程
+              9.3.1、输入用户名和密码
+              9.3.2、服务端验证用户名和密码是否正确，正确则创建token
+              9.3.3、返回给客户端token，客户端存储token
+              9.3.4、访问其他权限路由时，客户端请求时带上token，服务端进行验证
+
+          9.4、Token的特点
+              9.4.1、解放了一部分后端，因为后端不用存储token，只需验证即可
+              9.4.2、前端保存token不一定非要保存在cookie中，提高了页面的安全性
+              9.4.3、token下发后，有效时间内有效
+
+          9.5、生成Token的方式？
+                jsonwebtoken(JWT)
+
+          9.6、验证token是否有效？
+                这个主要就是验证token是否过期。这个主要有2种方式。要么自己编写一个中间件，要么借用库中的方法
+                我是把库中的方法封装在一个中间件里了。具体的信息请到util目录下去找vertoken。
+                注意事项：
+                        1、这里我用的promise，因为库用的是回调函数，回调函数不太友好（回调地狱。。。）
+                        2、还是那句话，具体的信息还得参照GitHub上的jsonwebtoken库
+                        3、注意流程：解析token-> 验证->鉴权
