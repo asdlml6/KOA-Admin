@@ -33,7 +33,6 @@ router.get('/',async (ctx,next)=>{
 router.post('/',async (ctx,next)=>{
    // 用户名、密码、验证码都正确的话，才生成token
    const {username,password,verification} = ctx.request.body
-  // const {username,password} = ctx.request.body
 
    if(verification!=svgCaptchaResult){
      responseData.code=2
@@ -48,16 +47,15 @@ router.post('/',async (ctx,next)=>{
      ctx.response.body= responseData
      return 
    }else{
-     console.log('要登录')
      const {username}=user
      responseData.code=0
      responseData.message='登录成功'
      responseData.username=username
-     setToken(username).then((value)=>{
+     setToken(username).then((value)=>{      // 这个value就是token
        responseData.token=value
        ctx.response.body=responseData
      })
-     await next()
+     //await next()
      return 
    }
 })
