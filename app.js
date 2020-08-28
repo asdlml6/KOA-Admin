@@ -13,6 +13,7 @@ const jwt=require('koa-jwt')
 //const Need_Token=jwt({secret})
 const {checkToken,setToken,verToken}=require('./util/index')
 const mongoose=require('mongoose')
+const check=require('./util/verify')
 
 const app=new Koa()
 const router=new Router()
@@ -31,37 +32,43 @@ app.use(views(path.join(__dirname,'./view'),{
 // 访问图片，直接通过 localhost:3005/hy.jpg 就可以访问到
 app.use(KoaStatic(path.join(__dirname,'./static')))
 
+app.use(check)
+
+// 利用jwt进行鉴权处理（登录和注册不用被鉴权,原先使用这种方式）
+/*app.use(jwt({secret}).unless({
+  path:[/\/register/,/\/login/]
+}))
+
 app.use(async (ctx,next)=>{
-  var token=ctx.request.headers.authorization
+  console.log('req-headers:',ctx.req.headers)
+  var token=ctx.req.headers.cookie
   if(token==undefined){
     await next()
   }else{
-    verToken(token).then((data)=>{
-      ctx.state={data} 
+    var accessToken=token.split('=')[1]
+    verToken(accessToken).then((data)=>{     // 验证token，如果不符合自动抛出错误
+      ctx.state={
+        data:data
+      } 
     })
     await next()
   }
 })
+*/
 
 // 验证token是否过期
-app.use(async (ctx,next)=>{
-   console.log('222')
+/*app.use(async (ctx,next)=>{
    return next().catch((err)=>{
       if(err){
           ctx.status=401          
-          ctx.response.body={
+          ctx.body={
              status:401,
              message:'登录过期，请重新登录'
           }
       }
     })
 })
-
-
-// 利用jwt进行鉴权处理（登录和注册不用被鉴权）
-app.use(jwt({secret}).unless({
-  path:[/\/register/,/\/login/]
-}))
+*/
 
 
 // 为所有的请求设置请求头Authorization(有些路由需要相关权限才能访问，这个权限就是token)
@@ -80,7 +87,8 @@ app.use(jwt({secret}).unless({
 // 登录和注册不用进行token的验证
 router.use('/login',require('./route/loginRegister/login.js'))
 router.use('/register',require('./route/loginRegister/register.js'))
-router.use('/api',require('./route/api/index'))
+router.use('/admin',require('./route/admin/index'))
+router.use('/home',require('./route/home/index'))
 
 app.use(router.routes())
 app.use(router.allowedMethods())
