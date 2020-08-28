@@ -47,10 +47,11 @@ const setToken=function(username){
    return new Promise((resolve,reject)=>{
      const token=jwt.sign({
        username,
-       timeout:Date.now()
-     },secret,{
-       expiresIn:'0.05h'
-     })
+       time:Date.now(),
+       timeout:Date.now()+5*60*1000
+     },secret
+      // expiresIn:'0.5h'
+     )
      resolve(token)
    }).catch((err)=>{
      console.log('setToken err:',err)
@@ -60,7 +61,8 @@ const setToken=function(username){
 // 解析token（并验证token是否有效）
 const verToken=function(token){
   return new Promise((resolve,reject)=>{
-    var userInfo=jwt.verify(token.split(' ')[1],secret,{
+    //var userInfo=jwt.verify(token.split(' ')[1],secret,{
+    var userInfo=jwt.verify(token,secret,{
       complete:true
     })
     resolve(userInfo)
